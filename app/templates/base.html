@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Kontratando{% endblock %} · {{ site_company.name if site_company else 'Kontratando' }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a class="brand" href="{{ url_for('main.index') }}">{{ (site_company.name if site_company else 'Kontratando') }}<span>.</span></a>
+      <div class="nav-links">
+        <a href="{{ url_for('main.index') }}">Inicio</a>
+        {% if current_user.is_authenticated %}
+          {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}">Panel de administración</a>
+          {% else %}
+            <a href="{{ url_for('candidate.my_applications') }}">Mis postulaciones</a>
+          {% endif %}
+          <a href="{{ url_for('auth.logout') }}">Salir ({{ current_user.name }})</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">Ingresar</a>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('auth.register') }}">Crear cuenta</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer>
+    &copy; {{ site_company.name if site_company else 'Kontratando' }} · Plataforma de gestión de contratación
+  </footer>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Crear cuenta{% endblock %}
+{% block content %}
+  <div class="card" style="max-width: 480px; margin: 0 auto;">
+    <h2>Crear cuenta de candidato</h2>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.name.label }}
+        {{ form.name(type="text") }}
+        {% for error in form.name.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ form.email.label }}
+        {{ form.email(type="email") }}
+        {% for error in form.email.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ form.phone.label }}
+        {{ form.phone(type="tel") }}
+        {% for error in form.phone.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ form.password.label }}
+        {{ form.password(type="password") }}
+        {% for error in form.password.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ form.confirm_password.label }}
+        {{ form.confirm_password(type="password") }}
+        {% for error in form.confirm_password.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+      </div>
+      {{ form.submit(class_="btn btn-primary") }}
+    </form>
+    <p style="margin-top:1rem;">¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a></p>
+  </div>
+{% endblock %}

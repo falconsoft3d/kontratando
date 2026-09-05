@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "admin/_tabs.html" import admin_tabs %}
+{% block title %}Lista negra{% endblock %}
+{% block content %}
+  {{ admin_tabs('blacklist') }}
+
+  <div class="card">
+    <h2>Agregar correo a la lista negra</h2>
+    <p class="job-meta">Si un candidato con este correo se registra (o ya está registrado), su cuenta se invalida automáticamente y no podrá iniciar sesión.</p>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.email.label }}
+        {{ form.email(type="email") }}
+        {% for error in form.email.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ form.first_name.label }}
+        {{ form.first_name(type="text") }}
+      </div>
+      <div class="form-group">
+        {{ form.last_name.label }}
+        {{ form.last_name(type="text") }}
+      </div>
+      <div class="form-group">
+        {{ form.reason.label }}
+        {{ form.reason(type="text") }}
+      </div>
+      {{ form.submit(class_="btn btn-primary") }}
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Correos en la lista negra</h3>
+    {% if entries %}
+      <table>
+        <thead><tr><th>Correo</th><th>Nombre</th><th>Apellido</th><th>Motivo</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+          {% for entry in entries %}
+            <tr>
+              <td>{{ entry.email }}</td>
+              <td>{{ entry.first_name or '—' }}</td>
+              <td>{{ entry.last_name or '—' }}</td>
+              <td>{{ entry.reason or '—' }}</td>
+              <td>{{ entry.created_at.strftime('%d/%m/%Y') }}</td>
+              <td>
+                <form action="{{ url_for('admin.remove_blacklist', entry_id=entry.id) }}" method="POST" onsubmit="return confirm('¿Quitar este correo de la lista negra?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-sm btn-outline">Quitar</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No hay correos en la lista negra.</p>
+    {% endif %}
+  </div>
+{% endblock %}

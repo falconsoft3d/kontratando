@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+  <section class="hero">
+    <h1>{{ company.name if company else 'Bienvenido a Kontratando' }}</h1>
+    <p>{{ company.tagline if company and company.tagline else 'Encuentra tu próxima oportunidad profesional con nosotros.' }}</p>
+  </section>
+
+  {% if company and company.description %}
+  <div class="card">
+    <h2>Sobre la empresa</h2>
+    <p>{{ company.description }}</p>
+    <p class="job-meta">
+      {% if company.website %}<a href="{{ company.website }}" target="_blank" rel="noopener">{{ company.website }}</a> ·{% endif %}
+      {% if company.email %}{{ company.email }} ·{% endif %}
+      {% if company.phone %}{{ company.phone }} ·{% endif %}
+      {% if company.address %}{{ company.address }}{% endif %}
+    </p>
+  </div>
+  {% endif %}
+
+  <h2>Puestos disponibles</h2>
+  {% if postings %}
+    {% for posting in postings %}
+      <div class="card job-card">
+        <div>
+          <h3><a href="{{ url_for('main.job_detail', posting_id=posting.id) }}">{{ posting.title }}</a></h3>
+          <div class="job-meta">
+            {% if posting.department %}<span class="tag">{{ posting.department }}</span>{% endif %}
+            {% if posting.location %}<span class="tag tag-muted">{{ posting.location }}</span>{% endif %}
+            {% if posting.employment_type %}<span class="tag tag-muted">{{ posting.employment_type }}</span>{% endif %}
+          </div>
+          <p>{{ posting.description[:180] }}{% if posting.description|length > 180 %}...{% endif %}</p>
+        </div>
+        <a class="btn btn-outline" href="{{ url_for('main.job_detail', posting_id=posting.id) }}">Ver puesto</a>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>No hay puestos publicados en este momento.</p>
+  {% endif %}
+{% endblock %}

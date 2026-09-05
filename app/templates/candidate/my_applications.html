@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Mis postulaciones{% endblock %}
+{% block content %}
+  <h2>Mis postulaciones</h2>
+  {% if applications %}
+    <table>
+      <thead>
+        <tr><th>Puesto</th><th>Fecha</th><th>Estado</th><th>Calificación IA</th></tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+          <tr>
+            <td>{{ app.job_posting.title }}</td>
+            <td>{{ app.created_at.strftime('%d/%m/%Y') }}</td>
+            <td><span class="tag tag-muted">{{ app.status }}</span></td>
+            <td>
+              {% if app.ai_score is not none %}
+                <span class="score-pill {{ 'score-high' if app.ai_score >= 70 else ('score-mid' if app.ai_score >= 40 else 'score-low') }}">{{ '%.0f'|format(app.ai_score) }}/100</span>
+              {% else %}
+                <span class="job-meta">Pendiente</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Aún no te has postulado a ningún puesto.</p>
+  {% endif %}
+{% endblock %}

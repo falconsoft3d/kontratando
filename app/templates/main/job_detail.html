@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ posting.title }}{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>{{ posting.title }}</h1>
+    <div class="job-meta">
+      {% if posting.department %}<span class="tag">{{ posting.department }}</span>{% endif %}
+      {% if posting.location %}<span class="tag tag-muted">{{ posting.location }}</span>{% endif %}
+      {% if posting.employment_type %}<span class="tag tag-muted">{{ posting.employment_type }}</span>{% endif %}
+    </div>
+    <p style="white-space: pre-line;">{{ posting.description }}</p>
+
+    {% if current_user.is_authenticated and not current_user.is_admin %}
+      <a class="btn btn-primary" href="{{ url_for('candidate.apply', posting_id=posting.id) }}">Postularme a este puesto</a>
+    {% elif not current_user.is_authenticated %}
+      <a class="btn btn-primary" href="{{ url_for('auth.login', next=url_for('candidate.apply', posting_id=posting.id)) }}">Ingresa para postularte</a>
+    {% endif %}
+  </div>
+{% endblock %}

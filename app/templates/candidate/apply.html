@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Postular a {{ posting.title }}{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2>Postular a: {{ posting.title }}</h2>
+    <p class="job-meta">{{ posting.department }} · {{ posting.location }}</p>
+
+    <form method="POST" enctype="multipart/form-data" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.resume.label }}
+        {{ form.resume() }}
+        {% for error in form.resume.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+        <p class="job-meta">
+          {% if current_user.resume_path %}Ya tienes un currículum guardado. Puedes subir uno nuevo para reemplazarlo.{% else %}Sube tu currículum en PDF para que la IA lo audite.{% endif %}
+        </p>
+      </div>
+
+      {% if questions %}
+        <h3>Preguntas del puesto</h3>
+        {% for question in questions %}
+          <div class="form-group">
+            <label>{{ question.text }}</label>
+            {% if question.question_type == 'choice' %}
+              {% for option in question.options %}
+                <div class="choice-option-row">
+                  <input type="radio" name="answer_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" required>
+                  <label for="option_{{ option.id }}" style="margin:0;">{{ option.text }}</label>
+                </div>
+              {% endfor %}
+            {% elif question.question_type == 'file' %}
+              <input type="file" name="answer_file_{{ question.id }}" required>
+            {% else %}
+              <textarea name="answer_{{ question.id }}" required></textarea>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {{ form.submit(class_="btn btn-primary") }}
+    </form>
+  </div>
+{% endblock %}

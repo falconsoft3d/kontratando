@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "admin/_tabs.html" import admin_tabs %}
+{% block title %}Puestos{% endblock %}
+{% block content %}
+  {{ admin_tabs('postings') }}
+  <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 1rem;">
+    <h2 style="margin:0;">Puestos</h2>
+    <a class="btn btn-primary" href="{{ url_for('admin.new_posting') }}">+ Nuevo puesto</a>
+  </div>
+
+  {% if postings %}
+    <table>
+      <thead><tr><th>Título</th><th>Departamento</th><th>Estado</th><th>Aperturas</th><th>Postulaciones</th><th></th></tr></thead>
+      <tbody>
+        {% for posting in postings %}
+          <tr>
+            <td>{{ posting.title }}</td>
+            <td>{{ posting.department }}</td>
+            <td>
+              {% if posting.is_published %}
+                <span class="tag tag-success">Publicado</span>
+              {% else %}
+                <span class="tag tag-muted">Borrador</span>
+              {% endif %}
+            </td>
+            <td>{{ posting.views_count }}</td>
+            <td>{{ posting.applications_count }}</td>
+            <td>
+              <a href="{{ url_for('admin.edit_posting', posting_id=posting.id) }}">Editar</a>
+              ·
+              <form action="{{ url_for('admin.toggle_publish', posting_id=posting.id) }}" method="POST" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline">{{ 'Despublicar' if posting.is_published else 'Publicar' }}</button>
+              </form>
+              <form action="{{ url_for('admin.delete_posting', posting_id=posting.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar este puesto?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No hay puestos creados todavía.</p>
+  {% endif %}
+{% endblock %}

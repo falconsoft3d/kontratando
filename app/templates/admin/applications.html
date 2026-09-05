@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "admin/_tabs.html" import admin_tabs %}
+{% block title %}Postulaciones{% endblock %}
+{% block content %}
+  {{ admin_tabs('applications') }}
+
+  <div class="stats-grid">
+    <div class="stat-box"><div class="number">{{ kpis.views_today }}</div><div class="label">Aperturas hoy</div></div>
+    <div class="stat-box"><div class="number">{{ kpis.views_total }}</div><div class="label">Aperturas totales</div></div>
+    <div class="stat-box"><div class="number">{{ kpis.applications_today }}</div><div class="label">Postulaciones hoy</div></div>
+    <div class="stat-box"><div class="number">{{ kpis.applications_total }}</div><div class="label">Postulaciones totales</div></div>
+  </div>
+
+  <h2>Postulaciones</h2>
+  {% if applications %}
+    <table>
+      <thead><tr><th>Candidato</th><th>Puesto</th><th>Fecha</th><th>Calificación IA</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        {% for app in applications %}
+          <tr>
+            <td>{{ app.candidate.name }}<br><span class="job-meta">{{ app.candidate.email }}</span></td>
+            <td>{{ app.job_posting.title }}</td>
+            <td>{{ app.created_at.strftime('%d/%m/%Y') }}</td>
+            <td>
+              {% if app.ai_score is not none %}
+                <span class="score-pill {{ 'score-high' if app.ai_score >= 70 else ('score-mid' if app.ai_score >= 40 else 'score-low') }}">{{ '%.0f'|format(app.ai_score) }}/100</span>
+              {% else %}
+                <span class="job-meta">Pendiente</span>
+              {% endif %}
+            </td>
+            <td><span class="tag tag-muted">{{ app.status }}</span></td>
+            <td><a href="{{ url_for('admin.application_detail', application_id=app.id) }}">Ver detalle</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Aún no hay postulaciones.</p>
+  {% endif %}
+{% endblock %}

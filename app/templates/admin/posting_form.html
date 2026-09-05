@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% from "admin/_tabs.html" import admin_tabs %}
+{% block title %}{{ 'Editar puesto' if posting else 'Nuevo puesto' }}{% endblock %}
+{% block content %}
+  {{ admin_tabs('postings') }}
+  <div class="card">
+    <h2>{{ 'Editar puesto' if posting else 'Nuevo puesto' }}</h2>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.title.label }}
+        {{ form.title(type="text") }}
+        {% for error in form.title.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ form.department.label }}
+        {{ form.department(type="text") }}
+      </div>
+      <div class="form-group">
+        {{ form.location.label }}
+        {{ form.location(type="text") }}
+      </div>
+      <div class="form-group">
+        {{ form.employment_type.label }}
+        {{ form.employment_type() }}
+      </div>
+      <div class="form-group">
+        <div style="display:flex; justify-content: space-between; align-items:center;">
+          {{ form.description.label }}
+          <button type="button" class="btn btn-sm btn-outline" id="btn-ai-description">✨ Generar descripción con IA</button>
+        </div>
+        {{ form.description() }}
+        <p class="job-meta" id="ai-description-status"></p>
+        {% for error in form.description.errors %}<div class="errors">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group checkbox-row">
+        {{ form.is_published() }}
+        {{ form.is_published.label }}
+      </div>
+
+      <h3>Preguntas para el candidato</h3>
+      <p class="job-meta">Agrega las preguntas que necesites. Puedes elegir texto libre, selección única con opciones, o solicitar un archivo adjunto.</p>
+      <button type="button" class="btn btn-sm btn-outline" id="btn-ai-questions">✨ Proponer preguntas con IA</button>
+      <p class="job-meta" id="ai-questions-status"></p>
+
+      <div id="questions-container">
+        {% for question in questions %}
+          <div class="card question-block" data-idx="{{ loop.index0 }}">
+            <div class="form-group">
+              <label>Tipo de pregunta</label>
+              <select name="q_type_{{ loop.index0 }}" class="q-type-select" onchange="toggleOptionsBlock(this)">
+                <option value="text" {{ 'selected' if question.question_type == 'text' }}>Texto libre</option>
+                <option value="choice" {{ 'selected' if question.question_type == 'choice' }}>Selección única</option>
+                <option value="file" {{ 'selected' if question.question_type == 'file' }}>Adjuntar archivo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Pregunta</label>
+              <textarea name="q_text_{{ loop.index0 }}" rows="2">{{ question.text }}</textarea>
+            </div>
+            <div class="q-options-block" style="display: {{ 'block' if question.question_type == 'choice' else 'none' }};">
+              <label>Opciones</label>
+              <div class="q-options-list">
+                {% for option in question.options %}
+                  <div class="q-option-row">
+                    <input type="text" name="q_options_{{ loop.index0 }}[]" value="{{ option.text }}" placeholder="Texto de la opción">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="this.parentElement.remove()">Quitar</button>
+                  </div>
+                {% endfor %}
+              </div>
+              <button type="button" class="btn btn-sm btn-outline" onclick="addOption(this)">+ Agregar opción</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.question-block').remove()">Eliminar pregunta</button>
+          </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-outline" onclick="addQuestionBlock()">+ Agregar pregunta</button>
+
+      <div style="margin-top: 1.5rem;">
+        {{ form.submit(class_="btn btn-primary") }}
+      </div>
+    </form>
+  </div>
+
+  <script>
+    let nextQuestionIndex = {{ questions|length }};
+
+    function toggleOptionsBlock(select) {
+      const block = select.closest('.question-block');
+      const optionsBlock = block.querySelector('.q-options-block');
+      optionsBlock.style.display = select.value === 'choice' ? 'block' : 'none';
+    }
+
+    function addOption(button) {
+      const block = button.closest('.question-block');
+      const idx = block.dataset.idx;
+      const list = block.querySelector('.q-options-list');
+      const row = document.createElement('div');
+      row.className = 'q-option-row';
+      row.innerHTML = '<input type="text" name="q_options_' + idx + '[]" placeholder="Texto de la opción">' +
+        ' <button type="button" class="btn btn-sm btn-outline" onclick="this.parentElement.remove()">Quitar</button>';
+      list.appendChild(row);
+    }
+
+    function addQuestionBlock(prefill) {
+      const idx = nextQuestionIndex++;
+      const container = document.getElementById('questions-container');
+      const block = document.createElement('div');
+      block.className = 'card question-block';
+      block.dataset.idx = idx;
+      const qType = (prefill && prefill.type) || 'text';
+      const qText = (prefill && prefill.text) || '';
+      block.innerHTML = `
+        <div class="form-group">
+          <label>Tipo de pregunta</label>
+          <select name="q_type_${idx}" class="q-type-select" onchange="toggleOptionsBlock(this)">
+            <option value="text">Texto libre</option>
+            <option value="choice">Selección única</option>
+            <option value="file">Adjuntar archivo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Pregunta</label>
+          <textarea name="q_text_${idx}" rows="2" placeholder="Escribe la pregunta"></textarea>
+        </div>
+        <div class="q-options-block" style="display:none;">
+          <label>Opciones</label>
+          <div class="q-options-list"></div>
+          <button type="button" class="btn btn-sm btn-outline" onclick="addOption(this)">+ Agregar opción</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.question-block').remove()">Eliminar pregunta</button>
+      `;
+      container.appendChild(block);
+
+      block.querySelector('textarea').value = qText;
+      block.querySelector('select').value = qType;
+      toggleOptionsBlock(block.querySelector('select'));
+
+      if (prefill && Array.isArray(prefill.options)) {
+        prefill.options.forEach((optionText) => {
+          const addBtn = block.querySelector('.q-options-block > button');
+          addOption(addBtn);
+          const rows = block.querySelectorAll('.q-option-row input');
+          rows[rows.length - 1].value = optionText;
+        });
+      }
+
+      return block;
+    }
+
+    function getCsrfToken() {
+      return document.querySelector('input[name="csrf_token"]').value;
+    }
+
+    const aiDescriptionBtn = document.getElementById('btn-ai-description');
+    const aiDescriptionStatus = document.getElementById('ai-description-status');
+    aiDescriptionBtn.addEventListener('click', async () => {
+      const titleField = document.querySelector('input[name="title"]');
+      const title = titleField.value.trim();
+      if (!title) {
+        aiDescriptionStatus.textContent = 'Escribe primero el título del puesto.';
+        return;
+      }
+      aiDescriptionBtn.disabled = true;
+      aiDescriptionStatus.textContent = 'Generando descripción con IA...';
+      try {
+        const resp = await fetch('{{ url_for("admin.ai_generate_description") }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+          body: JSON.stringify({ title }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.error || 'Ocurrió un error al generar la descripción.');
+        }
+        document.querySelector('textarea[name="description"]').value = data.description;
+        aiDescriptionStatus.textContent = 'Descripción generada. Puedes editarla antes de guardar.';
+      } catch (err) {
+        aiDescriptionStatus.textContent = err.message;
+      } finally {
+        aiDescriptionBtn.disabled = false;
+      }
+    });
+
+    const aiQuestionsBtn = document.getElementById('btn-ai-questions');
+    const aiQuestionsStatus = document.getElementById('ai-questions-status');
+    aiQuestionsBtn.addEventListener('click', async () => {
+      const title = document.querySelector('input[name="title"]').value.trim();
+      if (!title) {
+        aiQuestionsStatus.textContent = 'Escribe primero el título del puesto.';
+        return;
+      }
+      const countInput = window.prompt('¿Cuántas preguntas quieres que proponga la IA?', '5');
+      if (countInput === null) return;
+      const count = parseInt(countInput, 10);
+      if (!count || count < 1) {
+        aiQuestionsStatus.textContent = 'Ingresa un número válido de preguntas.';
+        return;
+      }
+      const description = document.querySelector('textarea[name="description"]').value.trim();
+      aiQuestionsBtn.disabled = true;
+      aiQuestionsStatus.textContent = 'Generando preguntas con IA...';
+      try {
+        const resp = await fetch('{{ url_for("admin.ai_suggest_questions") }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+          body: JSON.stringify({ title, description, count }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.error || 'Ocurrió un error al proponer preguntas.');
+        }
+        data.questions.forEach((question) => {
+          addQuestionBlock({ text: question.text, type: question.type, options: question.options });
+        });
+        aiQuestionsStatus.textContent = `Se agregaron ${data.questions.length} pregunta(s). Puedes editarlas o eliminarlas antes de guardar.`;
+      } catch (err) {
+        aiQuestionsStatus.textContent = err.message;
+      } finally {
+        aiQuestionsBtn.disabled = false;
+      }
+    });
+  </script>
+{% endblock %}

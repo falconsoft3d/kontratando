@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "admin/_tabs.html" import admin_tabs %}
+{% block title %}Detalle de postulación{% endblock %}
+{% block content %}
+  {{ admin_tabs('applications') }}
+
+  <div class="card">
+    <h2>{{ application.candidate.name }} · {{ application.job_posting.title }}</h2>
+    <p class="job-meta">{{ application.candidate.email }} · {{ application.candidate.phone or '' }}</p>
+    <p>Postulado el {{ application.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+
+    <div style="margin: 1rem 0;">
+      <span class="tag tag-muted">Estado: {{ application.status }}</span>
+      {% if application.ai_score is not none %}
+        <span class="score-pill {{ 'score-high' if application.ai_score >= 70 else ('score-mid' if application.ai_score >= 40 else 'score-low') }}">Calificación IA: {{ '%.0f'|format(application.ai_score) }}/100</span>
+      {% endif %}
+    </div>
+
+    <form method="POST" style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+      <a class="btn btn-sm btn-outline" href="{{ url_for('admin.set_application_status', application_id=application.id, new_status='reviewed') }}" onclick="event.preventDefault(); document.getElementById('status-reviewed').submit();">Marcar en revisión</a>
+      <a class="btn btn-sm btn-outline" href="{{ url_for('admin.set_application_status', application_id=application.id, new_status='accepted') }}" onclick="event.preventDefault(); document.getElementById('status-accepted').submit();">Aceptar</a>
+      <a class="btn btn-sm btn-danger" href="{{ url_for('admin.set_application_status', application_id=application.id, new_status='rejected') }}" onclick="event.preventDefault(); document.getElementById('status-rejected').submit();">Rechazar</a>
+    </form>
+    <form id="status-reviewed" action="{{ url_for('admin.set_application_status', application_id=application.id, new_status='reviewed') }}" method="POST" hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+    <form id="status-accepted" action="{{ url_for('admin.set_application_status', application_id=application.id, new_status='accepted') }}" method="POST" hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+    <form id="status-rejected" action="{{ url_for('admin.set_application_status', application_id=application.id, new_status='rejected') }}" method="POST" hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+
+    {% if application.candidate.resume_path %}
+      <p><a href="{{ url_for('admin.download_resume', application_id=application.id) }}" target="_blank">Descargar currículum (PDF)</a></p>
+    {% endif %}
+
+    <h3>Retroalimentación de la IA</h3>
+    {% if application.ai_feedback %}
+      <p style="white-space: pre-line;">{{ application.ai_feedback }}</p>
+      <p class="job-meta">Última auditoría: {{ application.ai_audited_at.strftime('%d/%m/%Y %H:%M') if application.ai_audited_at else '—' }}</p>
+    {% else %}
+      <p>Aún no se ha generado una auditoría de IA para esta postulación.</p>
+    {% endif %}
+
+    {% if application.ai_psychological_summary %}
+      <h3>Resumen psicológico (IA)</h3>
+      <p class="job-meta">Basado únicamente en las respuestas del candidato. No es un diagnóstico clínico, es una orientación para el reclutador.</p>
+      <p style="white-space: pre-line;">{{ application.ai_psychological_summary }}</p>
+    {% endif %}
+
+    <form action="{{ url_for('admin.reaudit_application', application_id=application.id) }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary btn-sm">Re-ejecutar auditoría de IA</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Respuestas del candidato</h3>
+    {% for answer in application.answers %}
+      <div style="margin-bottom: 1rem;">
+        <strong>{{ answer.question.text }}</strong>
+        {% if answer.question.question_type == 'file' %}
+          {% if answer.answer_file_path %}
+            <p><a href="{{ url_for('admin.download_answer_file', answer_id=answer.id) }}" target="_blank">Descargar archivo adjunto</a></p>
+          {% else %}
+            <p>(sin archivo adjunto)</p>
+          {% endif %}
+        {% else %}
+          <p>{{ answer.display_answer }}</p>
+        {% endif %}
+      </div>
+    {% else %}
+      <p>Este puesto no tenía preguntas asignadas.</p>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h3>Comentarios internos (entrevistas, notas, etc.)</h3>
+    <p class="job-meta">Estos comentarios se toman en cuenta cuando se re-ejecuta la auditoría de IA.</p>
+
+    {% for comment in application.comments %}
+      <div style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+        <p style="white-space: pre-line; margin: 0 0 0.25rem;">{{ comment.body }}</p>
+        <p class="job-meta" style="margin: 0;">{{ comment.author.name }} · {{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+      </div>
+    {% else %}
+      <p>Aún no hay comentarios para esta postulación.</p>
+    {% endfor %}
+
+    <form action="{{ url_for('admin.add_comment', application_id=application.id) }}" method="POST">
+      {{ comment_form.hidden_tag() }}
+      <div class="form-group">
+        {{ comment_form.body.label }}
+        {{ comment_form.body(rows=3) }}
+      </div>
+      {{ comment_form.submit(class_="btn btn-primary btn-sm") }}
+    </form>
+  </div>
+{% endblock %}

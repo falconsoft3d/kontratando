@@ -1,0 +1,9 @@
+{% macro admin_tabs(active) %}
+<div class="admin-tabs">
+  <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}">Resumen</a>
+  <a href="{{ url_for('admin.company') }}" class="{{ 'active' if active == 'company' }}">Empresa</a>
+  <a href="{{ url_for('admin.postings') }}" class="{{ 'active' if active == 'postings' }}">Puestos</a>
+  <a href="{{ url_for('admin.applications') }}" class="{{ 'active' if active == 'applications' }}">Postulaciones</a>
+  <a href="{{ url_for('admin.blacklist') }}" class="{{ 'active' if active == 'blacklist' }}">Lista negra</a>
+</div>
+{% endmacro %}
